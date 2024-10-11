@@ -9,7 +9,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.swing.JOptionPane;
-import org.apache.commons.codec.digest.DigestUtils;  // Librería para hashing
+import org.apache.commons.codec.digest.DigestUtils;
+import hotel.reservaciones.FormSesion;
 
 /**
  *
@@ -127,7 +128,7 @@ public class FormRegistro extends javax.swing.JFrame {
     }//GEN-LAST:event_jPasswordFContraRegiActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-         // Obtener el nombre de usuario y la contraseña desde los campos de texto
+        // Obtener el nombre de usuario y la contraseña desde los campos de texto
         String usuario = jTextRegiUsuario.getText();
         String contrasena = new String(jPasswordFContraRegi.getPassword());
 
@@ -135,7 +136,23 @@ public class FormRegistro extends javax.swing.JFrame {
         String contrasenaHasheada = hashContrasenaMD5(contrasena);
 
         // Insertar el usuario y la contraseña hasheada en la base de datos
-        insertarUsuarioEnDB(usuario, contrasenaHasheada);
+        boolean registroExitoso = insertarUsuarioEnDB(usuario, contrasenaHasheada);
+
+        // Si el registro es exitoso, redirigir al nuevo formulario
+        if (registroExitoso) {
+            JOptionPane.showMessageDialog(this, "Usuario registrado con éxito. Redirigiendo al panel principal...");
+
+            // Crear una instancia del nuevo formulario (MainPanel o el que desees)
+            FormSesion nuevoForm = new FormSesion();
+
+            // Hacer visible el nuevo formulario
+            nuevoForm.setVisible(true);
+
+            // Cerrar el formulario de registro actual
+            this.dispose();  // O usa setVisible(false) si no deseas destruir el formulario
+        } else {
+            JOptionPane.showMessageDialog(this, "Error al registrar el usuario. Intenta nuevamente.");
+        }
     }                                        
 
     // Método para aplicar el hash MD5 a la contraseña
@@ -147,9 +164,10 @@ public class FormRegistro extends javax.swing.JFrame {
     private void insertarUsuarioEnDB(String usuario, String contrasenaHasheada) {
         Connection conexion = null;
         PreparedStatement consulta = null;
+        boolean registroExitoso = false;  // Indica si el registro fue exitoso
 
         try {
-            // Conexión a la base de datos (ajusta según sea necesario)
+            // Conexión a la base de datos
             conexion = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:XE", "SYSTEM", "123456");
 
             // Consulta SQL para insertar los datos en la tabla 'usuarios'
@@ -160,14 +178,11 @@ public class FormRegistro extends javax.swing.JFrame {
 
             // Ejecutar la consulta
             consulta.executeUpdate();
-
-            // Mostrar mensaje de éxito
-            JOptionPane.showMessageDialog(this, "Usuario registrado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            registroExitoso = true;  // Actualizar a true si la inserción fue exitosa
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error al registrar el usuario: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } finally {
-            // Cerrar la conexión y liberar recursos
             try {
                 if (consulta != null) consulta.close();
                 if (conexion != null) conexion.close();
@@ -175,6 +190,7 @@ public class FormRegistro extends javax.swing.JFrame {
                 e.printStackTrace();
             }
         }
+        return registroExitoso;
     
 
     }//GEN-LAST:event_jButton1ActionPerformed
